@@ -16,16 +16,21 @@ public class PinYinSearchProperties implements Serializable {
     /**
      * 是否启动
      */
-    private boolean enabled;
+    private boolean enabled = true;
 
     /**
      * endpoint
      */
-    private String endpoint;
+    private String endpoint = "http://127.0.0.1:7701";
 
     /**
      * authorization (token)
      */
     private String authorization;
+
+    /**
+     * tenant can be set to project name
+     */
+    private String tenant = "";
 
 }
