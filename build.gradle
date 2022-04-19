@@ -1,0 +1,39 @@
+
+plugins {
+	id 'org.springframework.boot' version '2.5.12'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+}
+
+group = 'com.github.pinyinsearch'
+version = '1.0.1'
+sourceCompatibility = '1.8'
+
+bootJar {
+	enabled = false
+}
+
+jar {
+	enabled = true
+}
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+
+dependencies {
+	// spring
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-autoconfigure'
+	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+	// lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+	useJUnitPlatform()
+}
