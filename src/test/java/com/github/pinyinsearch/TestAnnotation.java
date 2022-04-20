@@ -1,10 +1,20 @@
 package com.github.pinyinsearch;
 
+import com.github.pinyinsearch.entity.TestEntity;
+import com.github.pinyinsearch.service.TestService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.Map;
 
+/**
+ * Test
+ *
+ * @author jeessy
+ * @since 2022-04-20
+ */
 @SpringBootTest
 public class TestAnnotation {
 
@@ -12,19 +22,20 @@ public class TestAnnotation {
     TestService testService;
 
     @Test
+    public void testMethodEntity() {
+        testService.testMethod(new TestEntity("今天天气真好啊", 20));
+    }
+
+    @Test
     public void testMethodMap() {
-        testService.testMethod(new MyEntity("今天天气真好啊", 20));
+        Map<String, String> map = new HashMap<>();
+        map.put("name", "今天天气真好啊");
+        testService.testMethod(map);
     }
 
     @Test
-    public void testMethod() {
-        testService.testMethod("今天天气真好啊");
-    }
-
-
-    @Test
-    public void testParameter() {
-        testService.testParameter("今天天气真好啊");
+    public void testString() {
+        testService.testString("今天天气真好啊");
     }
 
 }

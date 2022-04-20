@@ -26,8 +26,14 @@ public class PinYinSearchAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(PinYinSearchService.class)
-    public PinYinSearchService searchService(){
+    public PinYinSearchService searchService() {
         return new PinYinSearchService(properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(PinYinSearchAspect.class)
+    public PinYinSearchAspect pinYinSearchAspect() {
+        return new PinYinSearchAspect(searchService());
     }
 
 }
