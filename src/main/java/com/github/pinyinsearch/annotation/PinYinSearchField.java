@@ -19,6 +19,8 @@ public @interface PinYinSearchField {
      *     留空默认为字段名称 <br/>
      *     实际的index name为 indexNamePrefix + "_" + indexNameSuffix
      * </p>
+     *
+     * @return ""
      */
     String indexNameSuffix() default "";
 

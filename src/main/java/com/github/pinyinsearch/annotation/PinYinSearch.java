@@ -16,6 +16,7 @@ public @interface PinYinSearch {
 
     /**
      * 是否为删除索引
+     * @return false
      */
     boolean deleteIndex() default false;
 

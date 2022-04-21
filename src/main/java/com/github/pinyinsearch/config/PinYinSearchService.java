@@ -39,6 +39,10 @@ public class PinYinSearchService {
     private final URI deleteUri;
     private final URI suggestionUri;
 
+    /**
+     * constructor
+     * @param props props
+     */
     public PinYinSearchService(PinYinSearchProperties props) {
         this.props = props;
         this.addUpdateUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "addUpdate");
@@ -63,6 +67,7 @@ public class PinYinSearchService {
     /**
      * 添加索引
      * @param indexName index name
+     * @param dataId 数据Id(通过数据Id更新索引)
      * @param data 数据
      */
     public void addUpdateIndex(String indexName, String dataId, String data) {

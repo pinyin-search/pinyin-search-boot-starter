@@ -24,12 +24,20 @@ public class PinYinSearchAutoConfiguration {
     @Resource
     private PinYinSearchProperties properties;
 
+    /**
+     * load {@link PinYinSearchService}
+     * @return PinYinSearchService
+     */
     @Bean
     @ConditionalOnMissingBean(PinYinSearchService.class)
     public PinYinSearchService searchService() {
         return new PinYinSearchService(properties);
     }
 
+    /**
+     * load {@link PinYinSearchAspect}
+     * @return PinYinSearchAspect
+     */
     @Bean
     @ConditionalOnMissingBean(PinYinSearchAspect.class)
     public PinYinSearchAspect pinYinSearchAspect() {

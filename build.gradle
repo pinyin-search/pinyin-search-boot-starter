@@ -4,39 +4,14 @@ plugins {
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 	id 'java'
 	id 'maven-publish'
+	id 'signing'
 }
 
-group = 'com.github.pinyinsearch'
+group = 'io.github.pinyin-search'
 version = '0.1.2'
 sourceCompatibility = '1.8'
 
-bootJar {
-	enabled = false
-}
-
-jar {
-	enabled = true
-}
-
-java {
-	withSourcesJar()
-}
-
-// https://docs.gradle.org/7.0/userguide/publishing_maven.html#publishing_maven
-publishing {
-	publications {
-		maven(MavenPublication) {
-			groupId = group
-			artifactId = 'pinyinsearch'
-			version = version
-
-			from components.java
-		}
-	}
-}
-
 repositories {
-	mavenLocal()
 	mavenCentral()
 }
 
@@ -58,4 +33,115 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+}
+
+bootJar {
+	enabled = false
+}
+
+jar {
+	enabled = true
+}
+
+java {
+	withJavadocJar()
+	withSourcesJar()
+}
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			artifactId = 'pinyin-search-boot-starter'
+			from components.java
+			versionMapping {
+				usage('java-api') {
+					fromResolutionOf('runtimeClasspath')
+				}
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+			pom {
+				name = 'pinyin-search-boot-starter'
+				description = 'pinyin-search-boot-starter'
+				url = 'https://github.com/pinyin-search/pinyin-search-boot-starter'
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				developers {
+					developer {
+						id = 'jeessy'
+						name = 'jeessy'
+						email = 'jeessy2@users.noreply.github.com'
+					}
+				}
+				scm {
+					connection = 'scm:git:git@github.com:pinyin-search/pinyin-search-boot-starter.git'
+					developerConnection = 'scm:git:git@github.com:pinyin-search/pinyin-search-boot-starter.git'
+					url = 'https://github.com/pinyin-search/pinyin-search-boot-starter'
+				}
+			}
+		}
+	}
+	repositories {
+		maven {
+			credentials {
+				username ossrhUsername
+				password ossrhPassword
+			}
+			// change URLs to point to your repos, e.g. http://my.org/repo
+			def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+			def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+			url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+		}
+	}
+}
+
+signing {
+	sign publishing.publications.mavenJava
+}
+
+
+javadoc {
+	if(JavaVersion.current().isJava9Compatible()) {
+		options.addBooleanOption('html5', true)
+	}
+}
+
+// https://docs.gradle.org/7.0/userguide/publishing_maven.html#publishing_maven
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			pom {
+				name = 'pinyin-search-boot-starter'
+				description = 'pinyin-search-boot-starter'
+				url = 'https://github.com/pinyin-search/pinyin-search-boot-starter'
+				properties = [
+						myProp: "value",
+						"prop.with.dots": "anotherValue"
+				]
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				developers {
+					developer {
+						id = 'jeessy'
+						name = 'jeessy'
+						email = 'jeessy2@users.noreply.github.com'
+					}
+				}
+				scm {
+					connection = 'scm:git:git@github.com:pinyin-search/pinyin-search-boot-starter.git'
+					developerConnection = 'scm:git:git@github.com:pinyin-search/pinyin-search-boot-starter.git'
+					url = 'https://github.com/pinyin-search/pinyin-search-boot-starter'
+				}
+			}
+		}
+	}
 }
