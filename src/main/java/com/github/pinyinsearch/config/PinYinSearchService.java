@@ -30,12 +30,14 @@ public class PinYinSearchService {
 
     private static OkHttpClient okHttpClient;
 
-    private final URI addUri;
+    private final URI addUpdateUri;
+    private final URI deleteUri;
     private final URI suggestionUri;
 
     public PinYinSearchService(PinYinSearchProperties props) {
         this.props = props;
-        this.addUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "add");
+        this.addUpdateUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "addUpdate");
+        this.deleteUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "delete");
         this.suggestionUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "suggestion");
     }
 
@@ -58,11 +60,11 @@ public class PinYinSearchService {
      * @param indexName index name
      * @param data 数据
      */
-    public void addIndex(String indexName, String data) {
+    public void addUpdateIndex(String indexName, String dataId, String data) {
         if (!props.isEnabled()) {
             return;
         }
-        Call call = getHttpClient().newCall(getRequest(addUri, indexName, data));
+        Call call = getHttpClient().newCall(getRequest(addUpdateUri, indexName, dataId, data));
 
         call.enqueue(new Callback() {
             @Override
@@ -70,9 +72,47 @@ public class PinYinSearchService {
                 if (response.code() == 200) {
                     try {
                         assert response.body() != null;
-                        log.debug("添加拼音搜索成功. indexName:{}, 返回值: {}", indexName, response.body().string());
+                        log.debug("添加拼音搜索成功! indexName:{}, 返回值: {}", indexName, response.body().string());
                     } catch (Exception e) {
-                        // ignore
+                        log.warn("添加拼音搜索失败! indexName:{}, Err: {}", indexName, e.getMessage());
+                        e.printStackTrace();
+                    }
+                    return;
+                }
+                log.warn("添加拼音搜索失败: {}", response.body());
+            }
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Request pinyin-search with error. {}", e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+
+    /**
+     * 添加索引
+     * @param indexName index name
+     * @param dataId dataId
+     * @param data 数据
+     */
+    public void deleteIndex(String indexName, String dataId, String data) {
+        if (!props.isEnabled()) {
+            return;
+        }
+        Call call = getHttpClient().newCall(getRequest(addUpdateUri, indexName, dataId, data));
+
+        call.enqueue(new Callback() {
+            @Override
+            public void onResponse(Call call, Response response) {
+                if (response.code() == 200) {
+                    try {
+                        assert response.body() != null;
+                        log.debug("添加拼音搜索成功! indexName:{}, 返回值: {}", indexName, response.body().string());
+                    } catch (Exception e) {
+                        log.warn("添加拼音搜索失败! indexName:{}, Err: {}", indexName, e.getMessage());
+                        e.printStackTrace();
                     }
                     return;
                 }
@@ -97,7 +137,7 @@ public class PinYinSearchService {
         if (!props.isEnabled()) {
             return null;
         }
-        Call call = getHttpClient().newCall(getRequest(suggestionUri, indexName, data));
+        Call call = getHttpClient().newCall(getRequest(suggestionUri, indexName, null, data));
         try (Response response = call.execute()) {
             return gson.fromJson(Objects.requireNonNull(response.body()).charStream(), PinYinSugResp.class);
         } catch (Exception e) {
@@ -111,16 +151,20 @@ public class PinYinSearchService {
      * request
      * @param uri uri
      * @param indexName indexName
+     * @param dataId dataId
      * @param data 数据
      * @return okhttp request
      */
-    private Request getRequest(URI uri, String indexName, String data) {
+    private Request getRequest(URI uri, String indexName, String dataId, String data) {
         Assert.notNull(indexName, "The IndexName can't be null");
 
         HttpUrl.Builder httpBuilder = Objects.requireNonNull(HttpUrl.get(uri)).newBuilder();
         httpBuilder.addQueryParameter("tenant", props.getTenant());
-        httpBuilder.addQueryParameter("data", data);
         httpBuilder.addQueryParameter("indexName", indexName);
+        if (null != dataId) {
+            httpBuilder.addQueryParameter("dataId", dataId);
+        }
+        httpBuilder.addQueryParameter("data", data);
 
         return new Request.Builder().url(httpBuilder.build()).get()
                 .addHeader("Authorization", props.getAuthorization())

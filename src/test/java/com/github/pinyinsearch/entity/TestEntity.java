@@ -1,5 +1,9 @@
 package com.github.pinyinsearch.entity;
 
+import com.github.pinyinsearch.annotation.PinYinSearchEntity;
+import com.github.pinyinsearch.annotation.PinYinSearchField;
+import com.github.pinyinsearch.annotation.PinYinSearchId;
+
 import java.io.Serializable;
 
 /**
@@ -8,13 +12,26 @@ import java.io.Serializable;
  * @author jeessy
  * @since 2022-04-20
  */
+@PinYinSearchEntity
 public class TestEntity implements Serializable {
+    @PinYinSearchId
+    private String guid;
+    @PinYinSearchField
     private String name;
     private Integer age;
 
-    public TestEntity(String name, Integer age) {
+    public TestEntity(String guid, String name, Integer age) {
+        this.guid = guid;
         this.name = name;
         this.age = age;
+    }
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
     }
 
     public String getName() {
