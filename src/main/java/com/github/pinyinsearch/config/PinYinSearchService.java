@@ -1,5 +1,8 @@
 package com.github.pinyinsearch.config;
 
+import com.github.pinyinsearch.annotation.PinYinSearchEntity;
+import com.github.pinyinsearch.annotation.PinYinSearchField;
+import com.github.pinyinsearch.annotation.PinYinSearchId;
 import com.github.pinyinsearch.entity.PinYinSugResp;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -7,8 +10,10 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -90,7 +95,6 @@ public class PinYinSearchService {
         });
     }
 
-
     /**
      * 添加索引
      * @param indexName index name
@@ -169,6 +173,66 @@ public class PinYinSearchService {
         return new Request.Builder().url(httpBuilder.build()).get()
                 .addHeader("Authorization", props.getAuthorization())
                 .build();
+    }
+
+    /**
+     * 反射内容并发送请求
+     * @param args args
+     * @return 是否有一次成功的请求
+     */
+    public boolean requestByArgs(Object[] args) {
+        boolean find = false;
+        for (Object arg : args) {
+            PinYinSearchEntity entityAnnotation = arg.getClass().getAnnotation(PinYinSearchEntity.class);
+            if (entityAnnotation != null) {
+                String indexNamePrefix = entityAnnotation.indexNamePrefix();
+                // 默认为参数的 class name
+                if ("".equals(indexNamePrefix)) {
+                    indexNamePrefix = arg.getClass().getSimpleName();
+                }
+                Field[] fields = arg.getClass().getDeclaredFields();
+
+                // 先查找 PinYinSearchId
+                Field fieldId = null;
+                for (Field field : fields) {
+                    if (field.getAnnotation(PinYinSearchId.class) != null) {
+                        fieldId = field;
+                        break;
+                    }
+                }
+
+                // field
+                if (fieldId == null) {
+                    continue;
+                }
+
+                fieldId.setAccessible(true);
+                Object dataId = ReflectionUtils.getField(fieldId, arg);
+                if (dataId instanceof String) {
+                    for (Field field : fields) {
+                        PinYinSearchField fieldAnnotation = field.getAnnotation(PinYinSearchField.class);
+                        if (fieldAnnotation != null) {
+                            String indexNameSuffix = fieldAnnotation.indexNameSuffix();
+                            if ("".equals(indexNameSuffix)) {
+                                // 默认当前字段名
+                                indexNameSuffix = field.getName();
+                            }
+                            field.setAccessible(true);
+                            Object value = ReflectionUtils.getField(field, arg);
+                            if (value instanceof String) {
+                                addUpdateIndex(indexNamePrefix + "_" + indexNameSuffix, (String) dataId, (String)value);
+                                find = true;
+                            } else {
+                                log.warn("{}#{} 获取的值类型不是字符串", arg.getClass().getSimpleName(), fieldId.getName());
+                            }
+                        }
+                    }
+                } else {
+                    log.warn("{}#{} 字段中不能获取字符串", arg.getClass().getSimpleName(), fieldId.getName());
+                }
+            }
+        }
+        return find;
     }
 
 }
