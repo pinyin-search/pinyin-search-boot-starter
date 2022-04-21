@@ -15,7 +15,7 @@ public class PinYinSugRespData implements Serializable {
     /**
      * index id
      */
-    private long id;
+    private String id;
 
     /**
      * key
