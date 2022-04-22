@@ -5,13 +5,13 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 拼音suggestion 实体
+ * 拼音suggest返回数据 实体
  *
  * @author jeessy
  * @since 2022-04-20
  */
 @Data
-public class PinYinSugRespData implements Serializable {
+public class PinYinSuggestRespData implements Serializable {
     /**
      * index id
      */

@@ -7,14 +7,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 拼音suggestion 实体
+ * 拼音suggest 实体
  *
  * @author jeessy
  * @since 2022-04-20
  */
 @Data
 @Builder
-public class PinYinSugResp implements Serializable {
+public class PinYinSuggestResp implements Serializable {
     /**
      * 是否成功
      */
@@ -28,6 +28,6 @@ public class PinYinSugResp implements Serializable {
     /**
      * 数据
      */
-    private List<PinYinSugRespData> data;
+    private List<PinYinSuggestRespData> data;
 
 }

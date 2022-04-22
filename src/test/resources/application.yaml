@@ -1,5 +1,8 @@
+spring:
+  application:
+    name: pinyin-search
 pinyin-search:
   enabled: true
   endpoint: https://pinyin-search.xxxxxx.com
   authorization: xxxxxx
-  tenant: projectName
+  tenant: ${spring.application.name}

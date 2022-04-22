@@ -1,6 +1,6 @@
 package io.github.pinyinsearch.config;
 
-import io.github.pinyinsearch.entity.PinYinSugResp;
+import io.github.pinyinsearch.entity.PinYinSuggestResp;
 import io.github.pinyinsearch.utils.PinYinSearchUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -34,7 +34,7 @@ public class PinYinSearchService {
 
     private final URI addUpdateUri;
     private final URI deleteUri;
-    private final URI suggestionUri;
+    private final URI suggestUri;
 
     /**
      * constructor
@@ -44,7 +44,7 @@ public class PinYinSearchService {
         this.props = props;
         this.addUpdateUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "addUpdate");
         this.deleteUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "delete");
-        this.suggestionUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "suggestion");
+        this.suggestUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "suggest");
     }
 
     /**
@@ -148,17 +148,17 @@ public class PinYinSearchService {
      * @param data data
      * @return 结果
      */
-    public PinYinSugResp suggestion(String indexName, String data) {
+    public PinYinSuggestResp suggest(String indexName, String data) {
         if (!props.isEnabled()) {
             return null;
         }
-        Call call = getHttpClient().newCall(getRequest(suggestionUri, indexName, null, data));
+        Call call = getHttpClient().newCall(getRequest(suggestUri, indexName, null, data));
         try (Response response = call.execute()) {
-            return gson.fromJson(Objects.requireNonNull(response.body()).charStream(), PinYinSugResp.class);
+            return gson.fromJson(Objects.requireNonNull(response.body()).charStream(), PinYinSuggestResp.class);
         } catch (Exception e) {
             log.warn("获取拼音搜索建议失败: {}", e.getMessage());
             e.printStackTrace();
-            return PinYinSugResp.builder().success(false).msg(e.getMessage()).data(new ArrayList<>()).build();
+            return PinYinSuggestResp.builder().success(false).msg(e.getMessage()).data(new ArrayList<>()).build();
         }
     }
 
