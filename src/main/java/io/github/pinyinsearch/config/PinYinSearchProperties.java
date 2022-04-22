@@ -1,4 +1,4 @@
-package com.github.pinyinsearch.config;
+package io.github.pinyinsearch.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @since 2022-04-19
  */
 @Data
-@ConfigurationProperties(prefix = "pinyin.search")
+@ConfigurationProperties(prefix = "pinyin-search")
 public class PinYinSearchProperties implements Serializable {
     /**
      * 是否启动

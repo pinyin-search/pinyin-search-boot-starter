@@ -1,5 +1,7 @@
-package com.github.pinyinsearch.config;
+package io.github.pinyinsearch.config;
 
+import io.github.pinyinsearch.aop.PinYinSearchAddUpdateAspect;
+import io.github.pinyinsearch.aop.PinYinSearchDeleteAspect;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,7 +20,7 @@ import javax.annotation.Resource;
 @Configuration
 @EnableConfigurationProperties(PinYinSearchProperties.class)
 @ConditionalOnClass(PinYinSearchService.class)
-@ConditionalOnProperty(prefix = "pinyin.search", value = "enabled", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "pinyin-search", value = "enabled", matchIfMissing = true)
 public class PinYinSearchAutoConfiguration {
 
     @Resource
@@ -35,13 +37,23 @@ public class PinYinSearchAutoConfiguration {
     }
 
     /**
-     * load {@link PinYinSearchAspect}
+     * load {@link PinYinSearchAddUpdateAspect}
      * @return PinYinSearchAspect
      */
     @Bean
-    @ConditionalOnMissingBean(PinYinSearchAspect.class)
-    public PinYinSearchAspect pinYinSearchAspect() {
-        return new PinYinSearchAspect(searchService());
+    @ConditionalOnMissingBean(PinYinSearchAddUpdateAspect.class)
+    public PinYinSearchAddUpdateAspect pinYinSearchAddUpdateAspect() {
+        return new PinYinSearchAddUpdateAspect(searchService());
+    }
+
+    /**
+     * load {@link PinYinSearchDeleteAspect}
+     * @return PinYinSearchAspect
+     */
+    @Bean
+    @ConditionalOnMissingBean(PinYinSearchDeleteAspect.class)
+    public PinYinSearchDeleteAspect pinYinSearchDeleteAspect() {
+        return new PinYinSearchDeleteAspect(searchService());
     }
 
 }

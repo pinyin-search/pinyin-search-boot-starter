@@ -1,5 +1,7 @@
-package com.github.pinyinsearch.config;
+package io.github.pinyinsearch.aop;
 
+import io.github.pinyinsearch.annotation.PinYinSearchDelete;
+import io.github.pinyinsearch.config.PinYinSearchService;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.After;
@@ -10,14 +12,14 @@ import org.aspectj.lang.reflect.MethodSignature;
 import java.lang.reflect.Method;
 
 /**
- * aspect
+ * 删除拼音搜索索引 aspect
  *
  * @author jeessy
- * @since 2022-04-19
+ * @since 2022-04-22
  */
 @Aspect
 @Slf4j
-public class PinYinSearchAspect {
+public class PinYinSearchDeleteAspect {
 
     private final PinYinSearchService pinYinSearchService;
 
@@ -25,14 +27,14 @@ public class PinYinSearchAspect {
      * constructor
      * @param pinYinSearchService pinYinSearchService
      */
-    public PinYinSearchAspect(PinYinSearchService pinYinSearchService) {
+    public PinYinSearchDeleteAspect(PinYinSearchService pinYinSearchService) {
         this.pinYinSearchService = pinYinSearchService;
     }
 
     /**
-     * PointCut 拦截 {@link com.github.pinyinsearch.annotation.PinYinSearch}
+     * PointCut 拦截 {@link PinYinSearchDelete}
      */
-    @Pointcut(value = "@annotation(com.github.pinyinsearch.annotation.PinYinSearch)")
+    @Pointcut(value = "@annotation(io.github.pinyinsearch.annotation.PinYinSearchDelete)")
     public void pointCut(){
     }
 
@@ -44,9 +46,8 @@ public class PinYinSearchAspect {
     public void after(JoinPoint joinPoint){
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
-        if (!pinYinSearchService.requestByArgs(joinPoint.getArgs())) {
-            log.warn("{}#{} 的所有参数中没有找到注解 @PinYinSearchEntity @PinYinSearchId @PinYinSearchField", method.getDeclaringClass().getSimpleName(), method.getName());
-        }
+        PinYinSearchDelete annotation = method.getAnnotation(PinYinSearchDelete.class);
+        pinYinSearchService.deleteIndex(annotation.value(), joinPoint.getArgs());
     }
 
 }

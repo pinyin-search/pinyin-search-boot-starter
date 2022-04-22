@@ -1,7 +1,7 @@
-package com.github.pinyinsearch;
+package io.github.pinyinsearch;
 
-import com.github.pinyinsearch.entity.TestEntity;
-import com.github.pinyinsearch.service.TestService;
+import io.github.pinyinsearch.entity.TestEntity;
+import io.github.pinyinsearch.service.TestService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -23,8 +23,13 @@ public class TestAnnotation {
     TestService testService;
 
     @Test
-    public void testMethodEntity() {
-        testService.testMethod(new TestEntity(UUID.randomUUID().toString(), "今天天气真好啊", 20));
+    public void testAddUpdate() {
+        testService.testAddUpdate(new TestEntity(UUID.randomUUID().toString(), "今天天气真好啊", 20));
+    }
+
+    @Test
+    public void testDelete() {
+        testService.testDelete("123456789");
     }
 
     @Test

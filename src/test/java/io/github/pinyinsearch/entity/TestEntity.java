@@ -1,8 +1,8 @@
-package com.github.pinyinsearch.entity;
+package io.github.pinyinsearch.entity;
 
-import com.github.pinyinsearch.annotation.PinYinSearchEntity;
-import com.github.pinyinsearch.annotation.PinYinSearchField;
-import com.github.pinyinsearch.annotation.PinYinSearchId;
+import io.github.pinyinsearch.annotation.PinYinSearchEntity;
+import io.github.pinyinsearch.annotation.PinYinSearchField;
+import io.github.pinyinsearch.annotation.PinYinSearchId;
 
 import java.io.Serializable;
 

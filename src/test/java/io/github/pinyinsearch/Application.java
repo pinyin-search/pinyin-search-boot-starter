@@ -1,4 +1,4 @@
-package com.github.pinyinsearch;
+package io.github.pinyinsearch;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

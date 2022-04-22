@@ -1,4 +1,4 @@
-package com.github.pinyinsearch.annotation;
+package io.github.pinyinsearch.annotation;
 
 import java.lang.annotation.*;
 

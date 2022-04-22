@@ -1,4 +1,4 @@
-package com.github.pinyinsearch.entity;
+package io.github.pinyinsearch.entity;
 
 import lombok.Builder;
 import lombok.Data;
