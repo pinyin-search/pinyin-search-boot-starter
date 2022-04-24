@@ -1,9 +1,9 @@
 package io.github.pinyinsearch.config;
 
-import io.github.pinyinsearch.entity.PinYinSuggestResp;
-import io.github.pinyinsearch.utils.PinYinSearchUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.github.pinyinsearch.entity.PinYinSuggestResp;
+import io.github.pinyinsearch.utils.PinYinSearchUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -154,9 +154,16 @@ public class PinYinSearchService {
         }
         Call call = getHttpClient().newCall(getRequest(suggestUri, indexName, null, data));
         try (Response response = call.execute()) {
-            return gson.fromJson(Objects.requireNonNull(response.body()).charStream(), PinYinSuggestResp.class);
+            if (response.code() == 200) {
+                assert response.body() != null;
+                return gson.fromJson(Objects.requireNonNull(response.body()).charStream(), PinYinSuggestResp.class);
+            }
+
+            assert response.body() != null;
+            log.warn("获取拼音搜索建议失败: {}", response.body().string());
+            return PinYinSuggestResp.builder().success(false).msg(response.body().string()).data(new ArrayList<>()).build();
         } catch (Exception e) {
-            log.warn("获取拼音搜索建议失败: {}", e.getMessage());
+            log.warn("获取拼音搜索建议失败发生异常: {}", e.getMessage());
             e.printStackTrace();
             return PinYinSuggestResp.builder().success(false).msg(e.getMessage()).data(new ArrayList<>()).build();
         }
