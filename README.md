@@ -9,7 +9,7 @@ spring boot 项目使用注解的方式快速搭建拼音分词搜索。需搭�
 <dependency>
   <groupId>io.github.pinyin-search</groupId>
   <artifactId>pinyin-search-boot-starter</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
 </dependency>
 ```
 
