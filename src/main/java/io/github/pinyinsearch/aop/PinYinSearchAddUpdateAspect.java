@@ -1,6 +1,6 @@
 package io.github.pinyinsearch.aop;
 
-import io.github.pinyinsearch.annotation.PinYinSearchAddUpdate;
+import io.github.pinyinsearch.annotation.PinYinSearchUpdate;
 import io.github.pinyinsearch.config.PinYinSearchService;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -32,9 +32,9 @@ public class PinYinSearchAddUpdateAspect {
     }
 
     /**
-     * PointCut 拦截 {@link PinYinSearchAddUpdate}
+     * PointCut 拦截 {@link PinYinSearchUpdate}
      */
-    @Pointcut(value = "@annotation(io.github.pinyinsearch.annotation.PinYinSearchAddUpdate)")
+    @Pointcut(value = "@annotation(io.github.pinyinsearch.annotation.PinYinSearchUpdate)")
     public void pointCut(){
     }
 
@@ -47,7 +47,7 @@ public class PinYinSearchAddUpdateAspect {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         // 添加或更新索引
-        if (!pinYinSearchService.addUpdateIndex(joinPoint.getArgs())) {
+        if (pinYinSearchService.updateIndex(joinPoint.getArgs()) == 0) {
             log.warn("{}#{} 的所有参数中没有找到注解 @PinYinSearchEntity @PinYinSearchId @PinYinSearchField", method.getDeclaringClass().getSimpleName(), method.getName());
         }
     }

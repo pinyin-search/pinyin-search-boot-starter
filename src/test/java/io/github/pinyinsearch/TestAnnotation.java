@@ -6,9 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Test
@@ -23,8 +24,16 @@ public class TestAnnotation {
     TestService testService;
 
     @Test
-    public void testAddUpdate() {
-        testService.testAddUpdate(new TestEntity(UUID.randomUUID().toString(), "今天天气真好啊", 20));
+    public void testUpdate() {
+        testService.testUpdate(new TestEntity("123456789", "今天天气真好啊", 20));
+    }
+
+    @Test
+    public void testUpdateBatch() throws InterruptedException {
+        List<TestEntity> list = new ArrayList<>();
+        list.add(new TestEntity("1", "我是帅哥", 20));
+        list.add(new TestEntity("2", "我是美女", 20));
+        testService.testUpdateBatch(list);
     }
 
     @Test
@@ -35,7 +44,7 @@ public class TestAnnotation {
     @Test
     public void testMethodMap() {
         Map<String, String> map = new HashMap<>();
-        map.put("guid", UUID.randomUUID().toString());
+        map.put("guid", "123456789");
         map.put("name", "今天天气真好啊");
         testService.testMethod(map);
     }

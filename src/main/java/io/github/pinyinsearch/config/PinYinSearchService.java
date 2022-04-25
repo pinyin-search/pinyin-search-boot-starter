@@ -2,17 +2,18 @@ package io.github.pinyinsearch.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.github.pinyinsearch.entity.PinYinRequest;
 import io.github.pinyinsearch.entity.PinYinSuggestResp;
 import io.github.pinyinsearch.utils.PinYinSearchUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import okio.BufferedSink;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -30,11 +31,14 @@ public class PinYinSearchService {
 
     private final static Gson gson = new GsonBuilder().create();
 
+    private final static int BATCH_SIZE = 500;
+
     private static OkHttpClient okHttpClient;
 
-    private final URI addUpdateUri;
-    private final URI deleteUri;
-    private final URI suggestUri;
+    private final String updateUrl;
+    private final String updateBatchUrl;
+    private final String deleteUrl;
+    private final String suggestUrl;
 
     /**
      * constructor
@@ -42,9 +46,11 @@ public class PinYinSearchService {
      */
     public PinYinSearchService(PinYinSearchProperties props) {
         this.props = props;
-        this.addUpdateUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "addUpdate");
-        this.deleteUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "delete");
-        this.suggestUri = URI.create(props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/") + "suggest");
+        String endpointPrefix = props.getEndpoint() + (props.getEndpoint().endsWith("/")?"":"/");
+        this.updateUrl = endpointPrefix + "update";
+        this.updateBatchUrl = endpointPrefix + "updateBatch";
+        this.deleteUrl = endpointPrefix + "delete";
+        this.suggestUrl = endpointPrefix + "suggest";
     }
 
     /**
@@ -62,41 +68,135 @@ public class PinYinSearchService {
     }
 
     /**
-     * 添加索引
-     * @param indexName index name
-     * @param dataId 数据Id(通过数据Id更新索引)
-     * @param data 数据
+     * 更新(添加)索引, 通过反射
+     *
+     * @param args args
+     * @return 成功的条数
      */
-    public void addUpdateIndex(String indexName, String dataId, String data) {
+    public int updateIndex(Object[] args) {
+        if (!props.isEnabled()) {
+            return 0;
+        }
+
+        List<PinYinRequest> pinYinRequests = new ArrayList<>();
+
+        // 通过反射解析参数
+        for (Object arg : args) {
+            if (arg instanceof Collection) {
+                // 集合迭代所有
+                for (Object obj : (Collection<?>) arg) {
+                    if (null != obj) {
+                        pinYinRequests.addAll(PinYinSearchUtils.getReflectResults(obj, obj.getClass(), props.getTenant()));
+                    }
+                }
+            } else {
+                // 非集合, 只迭代当前arg
+                pinYinRequests.addAll(PinYinSearchUtils.getReflectResults(arg, arg.getClass(), props.getTenant()));
+            }
+        }
+
+        if (!pinYinRequests.isEmpty()) {
+            if (pinYinRequests.size() > BATCH_SIZE) {
+                // 批量处理
+                int remainder = pinYinRequests.size() % BATCH_SIZE;
+                int number = pinYinRequests.size() / BATCH_SIZE;
+                for (int i=0; i<number; i++) {
+                    this.updateIndex(pinYinRequests.subList(i*BATCH_SIZE, (i+1) * BATCH_SIZE));
+                }
+                if (remainder > 0) {
+                    this.updateIndex(pinYinRequests.subList(number*BATCH_SIZE, pinYinRequests.size()));
+                }
+            } else {
+                this.updateIndex(pinYinRequests);
+            }
+        }
+
+        return pinYinRequests.size();
+    }
+
+    /**
+     * 批量更新(不存在会新增)索引
+     * @param pinYinRequests pinYinRequests
+     */
+    private void updateIndex(List<PinYinRequest> pinYinRequests) {
         if (!props.isEnabled()) {
             return;
         }
-        Call call = getHttpClient().newCall(getRequest(addUpdateUri, indexName, dataId, data));
+
+        Call call = getHttpClient().newCall(
+                new Request.Builder().url(updateBatchUrl).get()
+                        .addHeader("Authorization", props.getAuthorization())
+                        .post(new RequestBody() {
+                            @Override
+                            public MediaType contentType() {
+                                return MediaType.get("application/json");
+                            }
+
+                            @Override
+                            public void writeTo(BufferedSink sink) throws IOException {
+                                sink.write(gson.toJson(pinYinRequests).getBytes(StandardCharsets.UTF_8));
+                            }
+
+                        })
+                        .build()
+        );
 
         call.enqueue(new Callback() {
             @Override
             public void onResponse(Call call, Response response) {
-                if (response.code() == 200) {
-                    try {
-                        assert response.body() != null;
-                        log.debug("添加拼音搜索成功! indexName:{}, 返回值: {}", indexName, response.body().string());
-                    } catch (Exception e) {
-                        log.warn("添加拼音搜索失败! indexName:{}, Err: {}", indexName, e.getMessage());
-                        e.printStackTrace();
-                    }
-                    return;
-                }
                 try {
                     assert response.body() != null;
-                    log.warn("添加拼音搜索失败: {}", response.body().string());
+                    if (response.code() == 200) {
+                        log.debug("批量更新(新增)成功! 返回值: {}", response.body().string());
+                        return;
+                    }
+                    log.warn("批量更新(新增)失败！返回值: {}", response.body().string());
                 }catch (Exception e) {
-                    // ignore
+                    log.warn("批量更新(新增)失败! Err: {}", e.getMessage());
+                    e.printStackTrace();
                 }
             }
 
             @Override
             public void onFailure(Call call, IOException e) {
-                log.error("Request pinyin-search with error. {}", e.getMessage());
+                log.error("批量更新发生异常! Err: {}", e.getMessage());
+                e.printStackTrace();
+            }
+        });
+
+    }
+
+    /**
+     * 更新(添加)索引 单次
+     * @param indexName index name
+     * @param dataId 数据Id(通过数据Id更新索引)
+     * @param data 数据
+     */
+    public void updateIndex(String indexName, String dataId, String data) {
+        if (!props.isEnabled()) {
+            return;
+        }
+        Call call = getHttpClient().newCall(getRequest(updateUrl, indexName, dataId, data));
+
+        call.enqueue(new Callback() {
+            @Override
+            public void onResponse(Call call, Response response) {
+                try {
+                    assert response.body() != null;
+                    if (response.code() == 200) {
+                        log.debug("更新(新增)拼音搜索成功! indexName:{}, 返回值: {}", indexName, response.body().string());
+                        return;
+                    }
+                    log.warn("更新(新增)拼音搜索失败！返回值: {}", response.body().string());
+                }catch (Exception e) {
+                    log.warn("更新(新增)拼音搜索失败! Err: {}", e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("更新(新增)拼音发生异常! Err: {}", e.getMessage());
                 e.printStackTrace();
             }
         });
@@ -111,32 +211,27 @@ public class PinYinSearchService {
         if (!props.isEnabled()) {
             return;
         }
-        Call call = getHttpClient().newCall(getRequest(deleteUri, indexName, dataId, null));
+        Call call = getHttpClient().newCall(getRequest(deleteUrl, indexName, dataId, null));
 
         call.enqueue(new Callback() {
             @Override
             public void onResponse(Call call, Response response) {
-                if (response.code() == 200) {
-                    try {
-                        assert response.body() != null;
-                        log.debug("删除拼音搜索索引成功! indexName:{}, 返回值: {}", indexName, response.body().string());
-                    } catch (Exception e) {
-                        log.warn("删除拼音搜索索引失败! indexName:{}, Err: {}", indexName, e.getMessage());
-                        e.printStackTrace();
-                    }
-                    return;
-                }
                 try {
                     assert response.body() != null;
-                    log.warn("删除拼音索引失败: {}", response.body().string());
+                    if (response.code() == 200) {
+                        log.debug("删除拼音搜索索引成功! indexName:{}, 返回值: {}", indexName, response.body().string());
+                        return;
+                    }
+                    log.warn("删除拼音索引失败！返回值: {}", response.body().string());
                 }catch (Exception e) {
-                    // ignore
+                    log.warn("删除拼音索引失败! Err: {}", e.getMessage());
+                    e.printStackTrace();
                 }
             }
 
             @Override
             public void onFailure(Call call, IOException e) {
-                log.error("Request pinyin-search with error. {}", e.getMessage());
+                log.error("删除拼音索引发生异常! Err: {}", e.getMessage());
                 e.printStackTrace();
             }
         });
@@ -152,7 +247,7 @@ public class PinYinSearchService {
         if (!props.isEnabled()) {
             return null;
         }
-        Call call = getHttpClient().newCall(getRequest(suggestUri, indexName, null, data));
+        Call call = getHttpClient().newCall(getRequest(suggestUrl, indexName, null, data));
         try (Response response = call.execute()) {
             if (response.code() == 200) {
                 assert response.body() != null;
@@ -171,16 +266,16 @@ public class PinYinSearchService {
 
     /**
      * request
-     * @param uri uri
+     * @param url url
      * @param indexName indexName
      * @param dataId dataId
      * @param data 数据
      * @return okhttp request
      */
-    private Request getRequest(URI uri, String indexName, String dataId, String data) {
+    private Request getRequest(String url, String indexName, String dataId, String data) {
         Assert.notNull(indexName, "The IndexName can't be null");
 
-        HttpUrl.Builder httpBuilder = Objects.requireNonNull(HttpUrl.get(uri)).newBuilder();
+        HttpUrl.Builder httpBuilder = Objects.requireNonNull(HttpUrl.get(url)).newBuilder();
         httpBuilder.addQueryParameter("tenant", props.getTenant());
         httpBuilder.addQueryParameter("indexName", indexName);
         if (null != dataId) {
@@ -193,47 +288,6 @@ public class PinYinSearchService {
         return new Request.Builder().url(httpBuilder.build()).get()
                 .addHeader("Authorization", props.getAuthorization())
                 .build();
-    }
-
-    /**
-     * 添加或更新索引, 通过反射
-     * @param args args
-     * @return 是否有一次成功的请求
-     */
-    public boolean addUpdateIndex(Object[] args) {
-        boolean find = false;
-        for (Object arg : args) {
-            String indexNamePrefix = PinYinSearchUtils.getIndexNamePrefix(arg.getClass());
-            if (null != indexNamePrefix) {
-                Field[] fields = arg.getClass().getDeclaredFields();
-                Field fieldId = PinYinSearchUtils.getFieldId(fields);
-
-                // field
-                if (fieldId == null) {
-                    continue;
-                }
-
-                fieldId.setAccessible(true);
-                Object dataId = ReflectionUtils.getField(fieldId, arg);
-
-                if (dataId instanceof String) {
-                    Map<String, Field> fieldsMap = PinYinSearchUtils.getFields(fields);
-                    for (Map.Entry<String, Field> entry : fieldsMap.entrySet()) {
-                        entry.getValue().setAccessible(true);
-                        Object value = ReflectionUtils.getField(entry.getValue(), arg);
-                        if (value instanceof String) {
-                            addUpdateIndex(indexNamePrefix + "_" + entry.getKey(), (String) dataId, (String)value);
-                            find = true;
-                        } else {
-                            log.warn("{}#{} 获取的值类型不是字符串", arg.getClass().getSimpleName(), entry.getValue().getName());
-                        }
-                    }
-                } else {
-                    log.warn("{}#{} 字段中不能获取字符串", arg.getClass().getSimpleName(), fieldId.getName());
-                }
-            }
-        }
-        return find;
     }
 
     /**
