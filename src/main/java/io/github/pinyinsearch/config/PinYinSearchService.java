@@ -14,6 +14,7 @@ import org.springframework.util.Assert;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +32,7 @@ public class PinYinSearchService {
 
     private final static Gson gson = new GsonBuilder().create();
 
-    private final static int BATCH_SIZE = 500;
+    private final static int BATCH_SIZE = 10000;
 
     private static OkHttpClient okHttpClient;
 
@@ -61,7 +62,9 @@ public class PinYinSearchService {
         if (null == okHttpClient) {
             okHttpClient = new OkHttpClient.Builder()
                     .retryOnConnectionFailure(true)
-                    .connectionPool(new ConnectionPool(100, 30, TimeUnit.SECONDS))
+                    .connectionPool(new ConnectionPool(5, 120, TimeUnit.SECONDS))
+                    .writeTimeout(Duration.ofSeconds(180))
+                    .readTimeout(Duration.ofSeconds(180))
                     .build();
         }
         return okHttpClient;
