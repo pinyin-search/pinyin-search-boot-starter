@@ -8,10 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 拼音搜索 工具类
@@ -35,7 +32,8 @@ public class PinYinSearchUtils {
 
         String indexNamePrefix = PinYinSearchUtils.getIndexNamePrefix(clazz);
         if (null != indexNamePrefix) {
-            Field[] fields = clazz.getDeclaredFields();
+            List<Field> fields = new ArrayList<>();
+            getAllFields(fields, clazz);
             Field fieldId = PinYinSearchUtils.getFieldId(fields);
 
             // field
@@ -97,7 +95,7 @@ public class PinYinSearchUtils {
      * @param fields fields
      * @return {@link PinYinSearchId} Field
      */
-    public static Field getFieldId(Field[] fields) {
+    public static Field getFieldId(List<Field> fields) {
         for (Field field : fields) {
             if (field.getAnnotation(PinYinSearchId.class) != null) {
                 return field;
@@ -112,7 +110,7 @@ public class PinYinSearchUtils {
      * @param fields fields
      * @return Map key: indexNameSuffix value: 当前Field
      */
-    public static Map<String, Field> getFields(Field[] fields) {
+    public static Map<String, Field> getFields(List<Field> fields) {
         Map<String, Field> fieldsMap = new HashMap<>();
         for (Field field : fields) {
             PinYinSearchField fieldAnnotation = field.getAnnotation(PinYinSearchField.class);
@@ -126,5 +124,17 @@ public class PinYinSearchUtils {
             }
         }
         return fieldsMap;
+    }
+
+    /**
+     * Get All Fields
+     * @param fields to save fields
+     * @param clazz clazz
+     */
+    public static void getAllFields(List<Field> fields, Class<?> clazz) {
+        if (clazz.getSuperclass() != null) {
+            getAllFields(fields, clazz.getSuperclass());
+        }
+        fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
     }
 }

@@ -330,7 +330,9 @@ public class PinYinSearchService {
         for (String dataId : dataIds) {
             String indexNamePrefix = PinYinSearchUtils.getIndexNamePrefix(entityClass);
             if (null != indexNamePrefix) {
-                Map<String, Field> fieldsMap = PinYinSearchUtils.getFields(entityClass.getDeclaredFields());
+                List<Field> fields = new ArrayList<>();
+                PinYinSearchUtils.getAllFields(fields, entityClass);
+                Map<String, Field> fieldsMap = PinYinSearchUtils.getFields(fields);
                 for (Map.Entry<String, Field> entry : fieldsMap.entrySet()) {
                     deleteIndex(indexNamePrefix + "_" + entry.getKey(), dataId);
                 }
