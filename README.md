@@ -15,19 +15,21 @@ spring boot 项目使用注解的方式快速搭建拼音分词搜索。需搭�
 
 ## 基本使用
 ```
-@RestController
-@RequestMapping(value = "/demo" )
-public class DemoController {
+@Service
+public class DemoServiceImpl extends DemoService {
 
-    @PinYinSearchAddUpdate
-    @PostMapping("/add")
-    public Result add(@Validated @RequestBody Demo demo) {
+    @PinYinSearchUpdate
+    public boolean add(Demo demo) {
         // 具体业务
     }
-    
+
+    @PinYinSearchUpdate
+    public boolean edit(Demo demo) {
+        // 具体业务
+    }
+
     @PinYinSearchDelete(Demo.class)
-    @DeleteMapping("/{guid}")
-    public Result add(@PathVariable String guid) {
+    public boolean del(@PathVariable String guid) {
         // 具体业务
     }
 
